@@ -7,10 +7,10 @@ RRD Web API Server
     pip install fastapi uvicorn rrdtool
 
 起動方法:
-    uvicorn rrd_api_server:app --host 0.0.0.0 --port 8080
+    uvicorn rrd_api_server:app --host 0.0.0.0 --port [port number]
 
     # オプション: RRDファイルのディレクトリを環境変数で指定
-    RRD_BASE_DIR=/var/lib/rrd uvicorn rrd_api_server:app --host 0.0.0.0 --port 8080
+    RRD_BASE_DIR=/var/lib/rrd uvicorn rrd_api_server:app --host 0.0.0.0 --port [port number]
 """
 
 import os
@@ -26,7 +26,7 @@ from fastapi.responses import JSONResponse
 # ──────────────────────────────────────────────
 # 設定
 # ──────────────────────────────────────────────
-RRD_BASE_DIR = Path(os.environ.get("RRD_BASE_DIR", "/var/lib/rrd"))
+RRD_BASE_DIR = Path(os.environ.get("RRD_BASE_DIR", "/var/www/ysl/html/rrd"))
 
 app = FastAPI(
     title="RRD Web API",
@@ -133,7 +133,12 @@ def parse_fetch_output(raw: str, start_ts: int) -> dict:
         values = {}
         for i, ds in enumerate(ds_names):
             raw_val = parts[i + 1] if i + 1 < len(parts) else "nan"
-            values[ds] = None if raw_val.lower() == "nan" else float(raw_val)
+            try:
+                f = float(raw_val)
+                # NaN / inf はJSONに含められないので None に変換
+                values[ds] = None if (f != f or f == float("inf") or f == float("-inf")) else f
+            except ValueError:
+                values[ds] = None
         records.append({
             "timestamp": ts,
             "datetime":  datetime.fromtimestamp(ts).isoformat(),

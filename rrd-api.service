@@ -3,11 +3,12 @@ Description=RRD Web API Server
 After=network.target
 
 [Service]
-User=www-data
-WorkingDirectory=/opt/rrd-api
-Environment=RRD_BASE_DIR=/var/lib/rrd
+User=rrd
+WorkingDirectory=/usr/local/bin
+Environment=RRD_BASE_DIR=/var/www/ysl/html/rrd
 ExecStart=/usr/local/bin/uvicorn rrd_api_server:app --host 0.0.0.0 --port 8080
-Restart=always
+Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
